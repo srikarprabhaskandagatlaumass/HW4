@@ -306,6 +306,101 @@ def stratified_k_fold_split(X, y, k=5):
 
     return splits
 
+def process_network_case(case):
+    """
+    Process the network for the given case and print the required outputs.
+
+    Parameters:
+        case (int): The case to process (1 for the first case, 2 for the second case).
+
+    Prints:
+        - Activation of each neuron
+        - Final predicted output of the network
+        - Expected output
+        - Cost (J) associated with each instance
+        - Delta values of each neuron
+        - Gradients of all weights after processing each instance
+        - Final (regularized) gradients after backpropagation
+        - Final (regularized) cost, J, based on the complete training set
+    """
+    if case == 1:
+        # Case 1: Network Structure [1, 2, 1]
+        network_structure = [1, 2, 1]
+        weights_list = [
+            np.array([[0.40000, 0.10000], [0.30000, 0.20000]]),  # Theta1
+            np.array([[0.70000, 0.50000, 0.60000]])          # Theta2
+        ]
+        training_data = [
+            (np.array([0.13000]), np.array([0.90000])),  # Training instance 1
+            (np.array([0.42000]), np.array([0.23000]))  # Training instance 2
+        ]
+        lambda_reg = 0.0
+    elif case == 2:
+        # Case 2: Network Structure [2, 4, 3, 2]
+        network_structure = [2, 4, 3, 2]
+        weights_list = [
+            np.array([[0.42, 0.15, 0.4], [0.72, 0.1, 0.54], [0.01, 0.19, 0.42], [0.3, 0.35, 0.68]]),  # Theta1
+            np.array([[0.21, 0.67, 0.14, 0.96, 0.87], [0.87, 0.42, 0.2, 0.32, 0.89], [0.03, 0.56, 0.8, 0.69, 0.09]]),  # Theta2
+            np.array([[0.04, 0.87, 0.42, 0.53], [0.17, 0.1, 0.95, 0.69]])  # Theta3
+        ]
+        training_data = [
+            (np.array([0.32, 0.68]), np.array([0.75, 0.98])),  # Training instance 1
+            (np.array([0.83, 0.02]), np.array([0.75, 0.28]))   # Training instance 2
+        ]
+        lambda_reg = 0.25
+    else:
+        raise ValueError("Invalid case. Please pass 1 for the first case or 2 for the second case.")
+
+    # Process each training instance
+    for instance_idx, (x, y) in enumerate(training_data):
+        print(f"\nProcessing Training Instance {instance_idx + 1}")
+        print(f"Input x: {x}")
+        print(f"Expected Output y: {y}")
+
+        # Forward propagation
+        a_values, z_values = forward_propagation(x, weights_list)
+        y_pred = a_values[-1]
+        cost = compute_cost(x.reshape(1, -1), y.reshape(1, -1), weights_list, lambda_reg=0.0)
+
+        print("\nActivations of Each Neuron:")
+        for layer_idx, a in enumerate(a_values):
+            print(f"Layer {layer_idx + 1} Activations: {a}")
+
+        print(f"\nFinal Predicted Output: {y_pred}")
+        print(f"Cost (J) for this instance: {cost:.4f}")
+
+        # Backward propagation
+        gradients = backward_propagation(x.reshape(1, -1), y.reshape(1, -1), weights_list, lambda_reg=0.0)
+
+        print("\nDelta Values of Each Neuron:")
+        for layer_idx, z in enumerate(z_values):
+            delta = sigmoid_derivative(z)
+            print(f"Layer {layer_idx + 1} Delta Values: {delta}")
+
+        print("\nGradients of All Weights After Processing This Instance:")
+        for layer_idx, grad in enumerate(gradients):
+            print(f"Gradient for Theta{layer_idx + 1}:")
+            print(grad)
+
+    # Final regularized gradients after processing all instances
+    final_gradients = backward_propagation(
+        np.array([x for x, _ in training_data]),
+        np.array([y for _, y in training_data]),
+        weights_list,
+        lambda_reg=lambda_reg
+    )
+
+    print("\nFinal (Regularized) Gradients After Backpropagation:")
+    for layer_idx, grad in enumerate(final_gradients):
+        print(f"Regularized Gradient for Theta{layer_idx + 1}:")
+        print(grad)
+
+    # Compute the final (regularized) cost based on the complete training set
+    X_train = np.array([x for x, _ in training_data])
+    y_train = np.array([y for _, y in training_data])
+    final_cost = compute_cost(X_train, y_train, weights_list, lambda_reg=0.25)
+    print(f"\nFinal (Regularized) Cost, J, Based on the Complete Training Set: {final_cost:.4f}")
+
 # if __name__ == "__main__":
 #     # Load and preprocess the dataset
 #     file_path = "wdbc.csv"  # Replace with the actual path to your dataset
@@ -396,67 +491,138 @@ def stratified_k_fold_split(X, y, k=5):
 
 
 
+# if __name__ == "__main__":
+#     # Load and preprocess the dataset
+#     file_path = "wdbc.csv"  # Replace with the actual path to your dataset
+#     X, y = load_and_preprocess_dataset(file_path)
+
+#     input_layer_size = X.shape[1]
+
+#     # Define the structure of the network
+#     layer_sizes = [input_layer_size, 16, 8, 1]
+#     learning_rate = 0.5  # Step size (α)
+#     max_iterations = 50
+#     lambda_reg = 0.25
+#     batch_size = 32  # Mini-batch size
+#     epsilon = 1e-6  # Stopping criterion threshold
+
+#     # Split the dataset into training and test sets
+#     split_ratio = 0.8  # 80% training, 20% testing
+#     split_index = int(split_ratio * X.shape[0])
+#     X_train, X_test = X[:split_index], X[split_index:]
+#     y_train, y_test = y[:split_index], y[split_index:]
+
+#     # Initialize variables for the learning curve
+#     training_sizes = []
+#     test_costs = []
+
+#     # Incrementally increase the number of training samples
+#     for num_samples in range(10, X_train.shape[0] + 1, 10):  # Increase by 10 samples at a time
+#         print(f"\nTraining with {num_samples} samples...")
+
+#         # Use the first `num_samples` training examples
+#         X_train_subset = X_train[:num_samples]
+#         y_train_subset = y_train[:num_samples]
+
+#         # Initialize weights
+#         weights = initialize_weights(layer_sizes)
+
+#         # Train the network
+#         trained_weights, gradients = train_network(
+#             X_train_subset, y_train_subset,
+#             weights=weights,
+#             learning_rate=learning_rate,
+#             lambda_reg=lambda_reg,
+#             max_iterations=max_iterations,
+#             batch_size=batch_size,
+#             epsilon=epsilon
+#         )
+
+#         # Compute the cost on the test set
+#         test_cost = compute_cost(X_test, y_test, trained_weights, lambda_reg)
+#         print(f"Test Cost (J) with {num_samples} training samples: {test_cost:.4f}")
+
+#         # Store the results
+#         training_sizes.append(num_samples)
+#         test_costs.append(test_cost)
+
+#     # Plot the learning curve
+#     plt.figure(figsize=(10, 6))
+#     plt.plot(training_sizes, test_costs, marker='o', label="Test Cost (J)")
+#     plt.title("Learning Curve")
+#     plt.xlabel("Number of Training Samples")
+#     plt.ylabel("Cost Function (J)")
+#     plt.grid(True)
+#     plt.legend()
+#     plt.show()
+
 if __name__ == "__main__":
-    # Load and preprocess the dataset
-    file_path = "wdbc.csv"  # Replace with the actual path to your dataset
-    X, y = load_and_preprocess_dataset(file_path)
+    # Variable to call the function for specific cases
+    case = None  # Set to 1 for the first case, 2 for the second case, or None to do nothing
 
-    input_layer_size = X.shape[1]
+    if case is not None:
+        process_network_case(case)
+    else:
+        # Load and preprocess the dataset
+        file_path = "wdbc.csv"  # Replace with the actual path to your dataset
+        X, y = load_and_preprocess_dataset(file_path)
 
-    # Define the structure of the network
-    layer_sizes = [input_layer_size, 16, 8, 1]
-    learning_rate = 0.5  # Step size (α)
-    max_iterations = 50
-    lambda_reg = 0.25
-    batch_size = 32  # Mini-batch size
-    epsilon = 1e-6  # Stopping criterion threshold
+        input_layer_size = X.shape[1]
 
-    # Split the dataset into training and test sets
-    split_ratio = 0.8  # 80% training, 20% testing
-    split_index = int(split_ratio * X.shape[0])
-    X_train, X_test = X[:split_index], X[split_index:]
-    y_train, y_test = y[:split_index], y[split_index:]
+        # Define the structure of the network
+        layer_sizes = [input_layer_size, 16, 8, 1]
+        learning_rate = 0.5  # Step size (α)
+        max_iterations = 50
+        lambda_reg = 0.25
+        batch_size = 32  # Mini-batch size
+        epsilon = 1e-6  # Stopping criterion threshold
 
-    # Initialize variables for the learning curve
-    training_sizes = []
-    test_costs = []
+        # Split the dataset into training and test sets
+        split_ratio = 0.8  # 80% training, 20% testing
+        split_index = int(split_ratio * X.shape[0])
+        X_train, X_test = X[:split_index], X[split_index:]
+        y_train, y_test = y[:split_index], y[split_index:]
 
-    # Incrementally increase the number of training samples
-    for num_samples in range(10, X_train.shape[0] + 1, 10):  # Increase by 10 samples at a time
-        print(f"\nTraining with {num_samples} samples...")
+        # Initialize variables for the learning curve
+        training_sizes = []
+        test_costs = []
 
-        # Use the first `num_samples` training examples
-        X_train_subset = X_train[:num_samples]
-        y_train_subset = y_train[:num_samples]
+        # Incrementally increase the number of training samples
+        for num_samples in range(10, X_train.shape[0] + 1, 10):  # Increase by 10 samples at a time
+            print(f"\nTraining with {num_samples} samples...")
 
-        # Initialize weights
-        weights = initialize_weights(layer_sizes)
+            # Use the first `num_samples` training examples
+            X_train_subset = X_train[:num_samples]
+            y_train_subset = y_train[:num_samples]
 
-        # Train the network
-        trained_weights, gradients = train_network(
-            X_train_subset, y_train_subset,
-            weights=weights,
-            learning_rate=learning_rate,
-            lambda_reg=lambda_reg,
-            max_iterations=max_iterations,
-            batch_size=batch_size,
-            epsilon=epsilon
-        )
+            # Initialize weights
+            weights = initialize_weights(layer_sizes)
 
-        # Compute the cost on the test set
-        test_cost = compute_cost(X_test, y_test, trained_weights, lambda_reg)
-        print(f"Test Cost (J) with {num_samples} training samples: {test_cost:.4f}")
+            # Train the network
+            trained_weights, gradients = train_network(
+                X_train_subset, y_train_subset,
+                weights=weights,
+                learning_rate=learning_rate,
+                lambda_reg=lambda_reg,
+                max_iterations=max_iterations,
+                batch_size=batch_size,
+                epsilon=epsilon
+            )
 
-        # Store the results
-        training_sizes.append(num_samples)
-        test_costs.append(test_cost)
+            # Compute the cost on the test set
+            test_cost = compute_cost(X_test, y_test, trained_weights, lambda_reg)
+            print(f"Test Cost (J) with {num_samples} training samples: {test_cost:.4f}")
 
-    # Plot the learning curve
-    plt.figure(figsize=(10, 6))
-    plt.plot(training_sizes, test_costs, marker='o', label="Test Cost (J)")
-    plt.title("Learning Curve")
-    plt.xlabel("Number of Training Samples")
-    plt.ylabel("Cost Function (J)")
-    plt.grid(True)
-    plt.legend()
-    plt.show()
+            # Store the results
+            training_sizes.append(num_samples)
+            test_costs.append(test_cost)
+
+        # Plot the learning curve
+        plt.figure(figsize=(10, 6))
+        plt.plot(training_sizes, test_costs, marker='o', label="Test Cost (J)")
+        plt.title("Learning Curve")
+        plt.xlabel("Number of Training Samples")
+        plt.ylabel("Cost Function (J)")
+        plt.grid(True)
+        plt.legend()
+        plt.show()

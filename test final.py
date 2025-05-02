@@ -101,14 +101,12 @@ def generateMiniBatches(X, y, batch_size):
 
     return mini_batches
 
-def trainModel(X, y, weights, learning_rate=0.5, lambda_reg=0.0, batch_size=1, epsilon=1e-6):
+def trainModel(X, y, weights, learning_rate=0.5, lambda_reg=0.0, max_iterations=1, batch_size=1, epsilon=1e-6):
     y = np.array(y).reshape(-1, y.shape[1]) 
 
     prev_cost = float('inf') # Initialize the intial cost to infinity
     
-    iteration = 0
-    while True:
-        iteration += 1
+    for iteration in range(max_iterations):
         mini_batches = generateMiniBatches(X, y, batch_size)  # Create mini-batches
         total_cost = 0
 
@@ -123,9 +121,9 @@ def trainModel(X, y, weights, learning_rate=0.5, lambda_reg=0.0, batch_size=1, e
         total_cost /= len(mini_batches)
         print(f"Iteration: {iteration + 1}, Cost: {total_cost:.5f}")
 
-        if abs(prev_cost - total_cost) < epsilon:
-            print(f"Training Stopped - Less Improvement in Cost than {epsilon}.")
-            break
+        # if abs(prev_cost - total_cost) < epsilon:
+        #     print(f"Training Stopped - Less Improvement in Cost than {epsilon}.")
+        #     break
 
         prev_cost = total_cost # Update the previous cost
 
@@ -295,15 +293,16 @@ if __name__ == "__main__":
     case = None # Set to 1 for the first case, 2 for the second case, or None to do nothing
     mode = 2
 
-    file_path = "raisin.csv" # Replace with the actual path to your dataset
+    file_path = "wdbc.csv" # Replace with the actual path to your dataset
     X, y = preprocessDataset(file_path)
 
     layer_sizes = [X.shape[1], 16, 8, 1]
-    learning_rate = 0.1
-    lambda_reg = 0.01
-    batch_size = 32 
-    epsilon = 0.00001
-    k = 5 
+    learning_rate=0.1
+    lambda_reg=0.001
+    max_iterations=50
+    batch_size=32
+    epsilon=0.00001
+    k=5
 
     if case is not None:
         testCase(case)
@@ -323,8 +322,9 @@ if __name__ == "__main__":
                 weights=weights,
                 learning_rate=learning_rate,
                 lambda_reg=lambda_reg,
+                max_iterations=max_iterations,
                 batch_size=batch_size,
-                epsilon=epsilon
+                # epsilon=epsilon
             )
 
             y_pred = predictClass(X_test, trained_weights)
@@ -386,8 +386,9 @@ if __name__ == "__main__":
                 weights=weights,
                 learning_rate=learning_rate,
                 lambda_reg=lambda_reg,
+                max_iterations=max_iterations,
                 batch_size=batch_size,
-                epsilon=epsilon
+                # epsilon=epsilon
             )
 
             test_cost = calculateCost(X_test, y_test, trained_weights, lambda_reg)

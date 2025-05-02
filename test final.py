@@ -167,7 +167,7 @@ def preprocessDataset(file_path):
 
     X_numerical = X[numerical_columns]
     X_processed = pd.concat([X_numerical, X_categorical_encoded], axis=1).values
-    X_normalized = dataNormalization(X_processed)
+    X_normalized, mean, std = dataNormalization(X_processed)
 
     y = y.reshape(-1, 1)
 
@@ -245,8 +245,8 @@ def testCase(case):
 
     for instance_idx, (x, y) in enumerate(training_data):
         print(f"\nProcessing Training Instance {instance_idx + 1}")
-        print(f"Input x: {x}")
-        print(f"Expected Output y: {y}")
+        print(f"Input x: {[f'{val:.5f}' for val in x]}")
+        print(f"Expected Output y: {[f'{val:.5f}' for val in y]}")
 
         a_values, z_values = forwardPropagation(x, weights_list)
         y_pred = a_values[-1]
@@ -254,9 +254,9 @@ def testCase(case):
 
         print("\nActivations of Each Neuron:")
         for layer_idx, a in enumerate(a_values):
-            print(f"Layer {layer_idx + 1} Activations: {a}")
+            print(f"Layer {layer_idx + 1} Activations: {[f'{val:.5f}' for val in a]}")
 
-        print(f"\nFinal predictClassed Output: {y_pred}")
+        print(f"\nFinal Predicted Output: {[f'{val:.5f}' for val in y_pred]}")
         print(f"Cost (J) for this instance: {cost:.5f}")
 
         gradients = backwardPropagation(x.reshape(1, -1), y.reshape(1, -1), weights_list, lambda_reg=lambda_reg)
@@ -264,12 +264,13 @@ def testCase(case):
         print("\nDelta Values of Each Neuron:")
         for layer_idx, z in enumerate(z_values):
             delta = sigmoidDerivative(z)
-            print(f"Layer {layer_idx + 1} Delta Values: {delta}")
+            print(f"Layer {layer_idx + 1} Delta Values: {[f'{val:.5f}' for val in delta]}")
 
         print("\nGradients of All Weights After Processing This Instance:")
         for layer_idx, grad in enumerate(gradients):
             print(f"Gradient for Theta{layer_idx + 1}:")
-            print(grad)
+            for row in grad:
+                print("\t" + "  ".join(f"{val:.5f}" for val in row))
 
     final_gradients = backwardPropagation(
         np.array([x for x, _ in training_data]),
@@ -281,7 +282,8 @@ def testCase(case):
     print("\nFinal (Regularized) Gradients After Backpropagation:")
     for layer_idx, grad in enumerate(final_gradients):
         print(f"Regularized Gradient for Theta{layer_idx + 1}:")
-        print(grad)
+        for row in grad:
+            print("\t" + "  ".join(f"{val:.5f}" for val in row))
 
     X_train = np.array([x for x, _ in training_data])
     y_train = np.array([y for _, y in training_data])
@@ -289,32 +291,16 @@ def testCase(case):
     
     print(f"\nFinal (Regularized) Cost, J, Based on the Complete Training Set: {final_cost:.5f}")
 
-    # print("\nGradients of All Weights After Processing This Instance:")
-    # for layer_idx, grad in enumerate(gradients):
-    #     print(f"Gradient for Theta{layer_idx + 1}:")
-    # # Round each value to 5 decimal places when printing
-    # for row in grad:
-    #     print("\t" + "  ".join(f"{val:.5f}" for val in row))
-
-    # print("\nFinal (Regularized) Gradients After Backpropagation:")
-    # for layer_idx, grad in enumerate(final_gradients):
-    #     print(f"Regularized Gradient for Theta{layer_idx + 1}:")
-        
-    # # Round each value to 5 decimal places when printing
-    # for row in grad:
-    #     print("\t" + "  ".join(f"{val:.5f}" for val in row))
-
-    # print(f"\nFinal (Regularized) Cost, J, Based on the Complete Training Set: {final_cost:.5f}")
-
-
 if __name__ == "__main__":
     case = None # Set to 1 for the first case, 2 for the second case, or None to do nothing
-    mode = 2
+    mode = 1
 
-    file_path = "wdbc.csv" # Replace with the actual path to your dataset
+    file_path = "raisin.csv" # Replace with the actual path to your dataset
     X, y = preprocessDataset(file_path)
 
-    layer_sizes = [X.shape[1], 1]
+    input_layer_size = X.shape[1]
+
+    layer_sizes = [input_layer_size, 16, 8, 1]
     learning_rate = 0.5
     lambda_reg = 0.25
     batch_size = 32 
@@ -368,17 +354,17 @@ if __name__ == "__main__":
         print("\nMetrics for Each Fold:")
         for metrics in fold_metrics:
             print(f"Fold {metrics['Fold']} Metrics:")
-            print(f"Accuracy: {metrics['Accuracy']:.5f}")
-            print(f"Precision: {metrics['Precision']:.5f}")
-            print(f"Recall: {metrics['Recall']:.5f}")
-            print(f"F1 Score: {metrics['F1 Score']:.5f}")
+            print(f"Accuracy: {metrics['Accuracy'] * 100:.5f}")
+            print(f"Precision: {metrics['Precision'] * 100:.5f}")
+            print(f"Recall: {metrics['Recall'] * 100:.5f}")
+            print(f"F1 Score: {metrics['F1 Score'] * 100:.5f}")
             print(f"\n")
 
         print("\nAverage Metrics Across All Folds:")
-        print(f"Accuracy: {avg_accuracy:.5f}")
-        print(f"Precision: {avg_precision:.5f}")
-        print(f"Recall: {avg_recall:.5f}")
-        print(f"F1 Score: {avg_f1_score:.5f}")
+        print(f"Accuracy: {avg_accuracy * 100:.5f}")
+        print(f"Precision: {avg_precision * 100:.5f}")
+        print(f"Recall: {avg_recall * 100:.5f}")
+        print(f"F1 Score: {avg_f1_score * 100:.5f}")
     elif mode == 2:
         split_ratio = 0.8 # 80% training, 20% testing
         split_index = int(split_ratio * X.shape[0])

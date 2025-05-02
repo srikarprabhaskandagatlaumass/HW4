@@ -14,21 +14,10 @@ def addBiasNeuron(X):
         return np.concatenate([[1], X])
     return np.column_stack([np.ones(X.shape[0]), X])
 
-def generateInitialWeights(layer_sizes, weights=None):
-    return adjustDimensions(layer_sizes, weights)
-
-def adjustDimensions(layer_sizes, weights):
+def generateInitialWeights(layer_sizes):
     adjusted_weights = []
     for i in range(len(layer_sizes) - 1):
-        if weights is not None and i < len(weights):
-            if weights[i].shape == (layer_sizes[i + 1], layer_sizes[i] + 1):
-                adjusted_weights.append(weights[i])
-            else:
-                raise ValueError(f"Weight dimensions for layer {i + 1} do not match the expected dimensions: "
-                                 f"Expected {(layer_sizes[i + 1], layer_sizes[i] + 1)}, "
-                                 f"but got {weights[i].shape}.")
-        else:
-            adjusted_weights.append(np.random.uniform(-1, 1, size=(layer_sizes[i + 1], layer_sizes[i] + 1))) # Initialize weights (-1 and +1)
+        adjusted_weights.append(np.random.uniform(-1, 1, size=(layer_sizes[i + 1], layer_sizes[i] + 1))) # Initialize weights (-1 and +1)
     return adjusted_weights
 
 def forwardPropagation(X, weights):

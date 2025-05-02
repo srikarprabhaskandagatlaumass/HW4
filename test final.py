@@ -298,9 +298,7 @@ if __name__ == "__main__":
     file_path = "raisin.csv" # Replace with the actual path to your dataset
     X, y = preprocessDataset(file_path)
 
-    input_layer_size = X.shape[1]
-
-    layer_sizes = [input_layer_size, 16, 8, 1]
+    layer_sizes = [X.shape[1], 16, 8, 1]
     learning_rate = 0.5
     lambda_reg = 0.25
     batch_size = 32 
@@ -365,6 +363,7 @@ if __name__ == "__main__":
         print(f"Precision: {avg_precision * 100:.5f}")
         print(f"Recall: {avg_recall * 100:.5f}")
         print(f"F1 Score: {avg_f1_score * 100:.5f}")
+
     elif mode == 2:
         split_ratio = 0.8 # 80% training, 20% testing
         split_index = int(split_ratio * X.shape[0])

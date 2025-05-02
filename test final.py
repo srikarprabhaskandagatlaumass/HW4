@@ -61,17 +61,11 @@ def compute_cost(X, y, weights, lambda_reg, verbose=False):
     total_cost = np.sum(cost_per_example) / m
 
     # Regularization term (exclude bias weights)
-    reg_term = sum(np.sum(theta[:, 1:]**2) for theta in weights)
+    reg_term = 0
+    for theta in weights:
+        reg_term += np.sum(theta[:, 1:]**2)
     reg_term = (lambda_reg / (2 * m)) * reg_term
     total_cost += reg_term
-
-    # if verbose:
-    #     for i in range(m):
-    #         print(f"\nProcessing training instance {i + 1}")
-    #         print(f"\tInput x: {X[i]}")
-    #         print(f"\tExpected output y: {y[i]}")
-    #         print(f"\tPredicted output f(x): {a_final[i]}")
-    #         print(f"\tCost, J, associated with instance {i + 1}: {np.sum(cost_per_example[i]):.3f}")
 
     return total_cost
 
@@ -82,18 +76,23 @@ def backward_propagation(X, y, weights, lambda_reg):
 
     # Backpropagate through hidden layers
     for l in range(len(weights) - 1, 0, -1):
-        a_l = sigmoid(z_values[l - 1])
-        delta = np.dot(deltas[-1], weights[l][:, 1:]) * sigmoid_derivative(a_l)
+        delta = np.dot(deltas[-1], weights[l][:, 1:]) * sigmoid_derivative(a_values[l][:, 1:])
         deltas.append(delta)
 
     deltas.reverse()
 
     gradients = []
     for l in range(len(weights)):
+        # Calculate gradient without regularization
         grad = np.dot(deltas[l].T, a_values[l]) / m
-        reg_term = (lambda_reg / m) * weights[l]
-        reg_term[:, 0] = 0  # Exclude bias weights from regularization
-        gradients.append(grad + reg_term)
+        
+        # Add regularization (except for bias term)
+        if lambda_reg != 0:
+            reg_term = (lambda_reg / m) * weights[l]
+            reg_term[:, 0] = 0  # Don't regularize bias term
+            grad += reg_term
+            
+        gradients.append(grad)
 
     return gradients
 
@@ -133,8 +132,10 @@ def train_network(X, y, weights, learning_rate=0.5, lambda_reg=0.0, max_iteratio
     # # print("Computing the error/cost, J, of the network")
 
     prev_cost = float('inf')  # Initialize the previous cost to infinity
-
-    for iteration in range(max_iterations):
+    
+    iteration = 0
+    while True:
+        iteration += 1
         mini_batches = create_mini_batches(X, y, batch_size)  # Create mini-batches
         total_cost = 0
 
@@ -282,17 +283,29 @@ def predict(X, weights):
 
 def stratified_k_fold_split(X, y, k=5):
     """
-    Perform stratified k-fold splitting of the dataset.
+    Perform stratified k-fold splitting of the dataset without using libraries.
     Ensures that each fold has a similar class distribution as the original dataset.
+
+    Parameters:
+        X (numpy.ndarray): Feature matrix.
+        y (numpy.ndarray): Labels.
+        k (int): Number of folds.
+
+    Returns:
+        List of tuples: Each tuple contains (X_train, y_train, X_test, y_test) for a fold.
     """
-    # Get the unique classes and their indices
-    classes, y_indices = np.unique(y, return_inverse=True)
-    folds = [[] for _ in range(k)]
+    # Get unique classes and their indices
+    classes = np.unique(y)
+    class_indices = {cls: np.where(y == cls)[0] for cls in classes}
+
+    # Shuffle indices for each class
+    for cls in classes:
+        np.random.shuffle(class_indices[cls])
 
     # Split indices for each class into k folds
+    folds = [[] for _ in range(k)]
     for cls in classes:
-        cls_indices = np.where(y == cls)[0]
-        np.random.shuffle(cls_indices)
+        cls_indices = class_indices[cls]
         cls_folds = np.array_split(cls_indices, k)
         for i in range(k):
             folds[i].extend(cls_folds[i])
@@ -302,7 +315,9 @@ def stratified_k_fold_split(X, y, k=5):
     for i in range(k):
         test_indices = np.array(folds[i])
         train_indices = np.array([idx for fold in folds if fold != folds[i] for idx in fold])
-        splits.append((train_indices, test_indices))
+        X_train, y_train = X[train_indices], y[train_indices]
+        X_test, y_test = X[test_indices], y[test_indices]
+        splits.append((X_train, y_train, X_test, y_test))
 
     return splits
 
@@ -360,17 +375,17 @@ def process_network_case(case):
         # Forward propagation
         a_values, z_values = forward_propagation(x, weights_list)
         y_pred = a_values[-1]
-        cost = compute_cost(x.reshape(1, -1), y.reshape(1, -1), weights_list, lambda_reg=0.0)
+        cost = compute_cost(x.reshape(1, -1), y.reshape(1, -1), weights_list, lambda_reg=lambda_reg)
 
         print("\nActivations of Each Neuron:")
         for layer_idx, a in enumerate(a_values):
             print(f"Layer {layer_idx + 1} Activations: {a}")
 
         print(f"\nFinal Predicted Output: {y_pred}")
-        print(f"Cost (J) for this instance: {cost:.4f}")
+        print(f"Cost (J) for this instance: {cost:.5f}")
 
         # Backward propagation
-        gradients = backward_propagation(x.reshape(1, -1), y.reshape(1, -1), weights_list, lambda_reg=0.0)
+        gradients = backward_propagation(x.reshape(1, -1), y.reshape(1, -1), weights_list, lambda_reg=lambda_reg)
 
         print("\nDelta Values of Each Neuron:")
         for layer_idx, z in enumerate(z_values):
@@ -398,8 +413,26 @@ def process_network_case(case):
     # Compute the final (regularized) cost based on the complete training set
     X_train = np.array([x for x, _ in training_data])
     y_train = np.array([y for _, y in training_data])
-    final_cost = compute_cost(X_train, y_train, weights_list, lambda_reg=0.25)
-    print(f"\nFinal (Regularized) Cost, J, Based on the Complete Training Set: {final_cost:.4f}")
+    final_cost = compute_cost(X_train, y_train, weights_list, lambda_reg=lambda_reg)
+    
+    print(f"\nFinal (Regularized) Cost, J, Based on the Complete Training Set: {final_cost:.5f}")
+
+    # print("\nGradients of All Weights After Processing This Instance:")
+    # for layer_idx, grad in enumerate(gradients):
+    #     print(f"Gradient for Theta{layer_idx + 1}:")
+    # # Round each value to 5 decimal places when printing
+    # for row in grad:
+    #     print("\t" + "  ".join(f"{val:.5f}" for val in row))
+
+    # print("\nFinal (Regularized) Gradients After Backpropagation:")
+    # for layer_idx, grad in enumerate(final_gradients):
+    #     print(f"Regularized Gradient for Theta{layer_idx + 1}:")
+        
+    # # Round each value to 5 decimal places when printing
+    # for row in grad:
+    #     print("\t" + "  ".join(f"{val:.5f}" for val in row))
+
+    # print(f"\nFinal (Regularized) Cost, J, Based on the Complete Training Set: {final_cost:.5f}")
 
 # if __name__ == "__main__":
 #     # Load and preprocess the dataset
@@ -494,24 +527,39 @@ if __name__ == "__main__":
     # Variable to call the function for specific cases
     case = None  # Set to 1 for the first case, 2 for the second case, or None to do nothing
     mode = 2
+    
+    # Load and preprocess the dataset
+    file_path = "wdbc.csv"  # Replace with the actual path to your dataset
+    X, y = load_and_preprocess_dataset(file_path)
+
+    input_layer_size = X.shape[1]
+
+    # Define the structure of the network
+    layer_sizes = [input_layer_size, 1]
+    learning_rate = 0.5
+    # max_iterations = 1000
+    lambda_reg = 0.25
+    batch_size = 32  # Mini-batch size
+    epsilon = 0.0001  # Stopping criterion threshold
+    k = 5  # Number of folds for cross-validation
 
     if case is not None:
         process_network_case(case)
     elif mode == 1:
-        # Load and preprocess the dataset
-        file_path = "wdbc.csv"  # Replace with the actual path to your dataset
-        X, y = load_and_preprocess_dataset(file_path)
+        # # Load and preprocess the dataset
+        # file_path = "datasets/wdbc.csv"  # Replace with the actual path to your dataset
+        # X, y = load_and_preprocess_dataset(file_path)
 
-        input_layer_size = X.shape[1]
+        # input_layer_size = X.shape[1]
 
-        # Define the structure of the network
-        layer_sizes = [input_layer_size, 16, 8, 1]
-        learning_rate = 0.5
-        max_iterations = 1000
-        lambda_reg = 0.25
-        batch_size = 32  # Mini-batch size
-        epsilon = 1e-6  # Stopping criterion threshold
-        k = 5  # Number of folds for cross-validation
+        # # Define the structure of the network
+        # layer_sizes = [input_layer_size, 1]
+        # learning_rate = 0.5
+        # # max_iterations = 1000
+        # lambda_reg = 0.25
+        # batch_size = 32  # Mini-batch size
+        # epsilon = 0.0001  # Stopping criterion threshold
+        # k = 5  # Number of folds for cross-validation
 
         # Perform stratified k-fold cross-validation
         splits = stratified_k_fold_split(X, y, k=k)
@@ -520,12 +568,8 @@ if __name__ == "__main__":
         fold_metrics = []  # To store metrics for each fold
         total_accuracy, total_precision, total_recall, total_f1_score = 0, 0, 0, 0
 
-        for fold, (train_indices, test_indices) in enumerate(splits):
+        for fold, (X_train, y_train, X_test, y_test) in enumerate(splits):
             print(f"\nProcessing Fold {fold + 1}/{k}")
-
-            # Split the data into training and testing sets
-            X_train, y_train = X[train_indices], y[train_indices]
-            X_test, y_test = X[test_indices], y[test_indices]
 
             # Initialize weights
             weights = initialize_weights(layer_sizes)
@@ -536,7 +580,6 @@ if __name__ == "__main__":
                 weights=weights,
                 learning_rate=learning_rate,
                 lambda_reg=lambda_reg,
-                max_iterations=max_iterations,
                 batch_size=batch_size,
                 epsilon=epsilon
             )
@@ -586,18 +629,18 @@ if __name__ == "__main__":
         print(f"F1 Score: {avg_f1_score:.4f}")
     elif mode == 2:
         # Load and preprocess the dataset
-        file_path = "wdbc.csv"  # Replace with the actual path to your dataset
-        X, y = load_and_preprocess_dataset(file_path)
+        # file_path = "datasets/wdbc.csv"  # Replace with the actual path to your dataset
+        # X, y = load_and_preprocess_dataset(file_path)
 
-        input_layer_size = X.shape[1]
+        # input_layer_size = X.shape[1]
 
-        # Define the structure of the network
-        layer_sizes = [input_layer_size, 16, 8, 1]
-        learning_rate = 0.5  # Step size (α)
-        max_iterations = 50
-        lambda_reg = 0.25
-        batch_size = 32  # Mini-batch size
-        epsilon = 1e-6  # Stopping criterion threshold
+        # # Define the structure of the network
+        # layer_sizes = [input_layer_size, 16, 8, 1]
+        # learning_rate = 0.5  # Step size (α)
+        # #max_iterations = 50
+        # lambda_reg = 0.25
+        # batch_size = 32  # Mini-batch size
+        # epsilon = 1e-6  # Stopping criterion threshold
 
         # Split the dataset into training and test sets
         split_ratio = 0.8  # 80% training, 20% testing
@@ -610,10 +653,10 @@ if __name__ == "__main__":
         test_costs = []
 
         # Incrementally increase the number of training samples
-        for num_samples in range(10, X_train.shape[0] + 1, 10):  # Increase by 10 samples at a time
+        for num_samples in range(5, X_train.shape[0] + 1, 5):  # Increase by 10 samples at a time
             print(f"\nTraining with {num_samples} samples...")
 
-            # Use the first `num_samples` training examples
+            # Use the first 'num_samples' training examples
             X_train_subset = X_train[:num_samples]
             y_train_subset = y_train[:num_samples]
 
@@ -626,14 +669,14 @@ if __name__ == "__main__":
                 weights=weights,
                 learning_rate=learning_rate,
                 lambda_reg=lambda_reg,
-                max_iterations=max_iterations,
+                # max_iterations=max_iterations,
                 batch_size=batch_size,
                 epsilon=epsilon
             )
 
             # Compute the cost on the test set
             test_cost = compute_cost(X_test, y_test, trained_weights, lambda_reg)
-            print(f"Test Cost (J) with {num_samples} training samples: {test_cost:.4f}")
+            print(f"Test Cost (J) with {num_samples} training samples: {test_cost:.5f}")
 
             # Store the results
             training_sizes.append(num_samples)

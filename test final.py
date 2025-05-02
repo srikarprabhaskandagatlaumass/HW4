@@ -32,7 +32,7 @@ def adjustDimensions(layer_sizes, weights):
     return adjusted_weights
 
 def forwardPropagation(X, weights):
-    a_values = [addBiasNeuron(X)]  # Add bias to input layer
+    a_values = [addBiasNeuron(X)] # Add bias to input layer
     z_values = []
 
     for i, theta in enumerate(weights):
@@ -65,8 +65,8 @@ def calculateCost(X, y, weights, lambda_reg, verbose=False):
 
 def backwardPropagation(X, y, weights, lambda_reg):
     m = X.shape[0]
-    a_values, z_values = forwardPropagation(X, weights)
-    deltas = [a_values[-1] - y]  # Output layer delta
+    a_values, _ = forwardPropagation(X, weights)
+    deltas = [a_values[-1] - y] # Output layer delta
 
     for l in range(len(weights) - 1, 0, -1):
         delta = np.dot(deltas[-1], weights[l][:, 1:]) * sigmoidDerivative(a_values[l][:, 1:])
@@ -75,14 +75,12 @@ def backwardPropagation(X, y, weights, lambda_reg):
     deltas.reverse()
 
     gradients = []
-    for l in range(len(weights)):
-        # Calculate gradient without regularization
+    for l in range(len(weights)): # Calculate gradient without regularization
         grad = np.dot(deltas[l].T, a_values[l]) / m
         
-        # Add regularization (except for bias term)
-        if lambda_reg != 0:
+        if lambda_reg != 0: # Add regularization (except for bias term)
             reg_term = (lambda_reg / m) * weights[l]
-            reg_term[:, 0] = 0  # Don't regularize bias term
+            reg_term[:, 0] = 0 # Don't regularize bias term
             grad += reg_term
             
         gradients.append(grad)
@@ -91,7 +89,7 @@ def backwardPropagation(X, y, weights, lambda_reg):
 
 def generateMiniBatches(X, y, batch_size):
     m = X.shape[0]
-    indices = np.random.permutation(m)  # Shuffle the data
+    indices = np.random.permutation(m) # Shuffle the data
     X_shuffled = X[indices]
     y_shuffled = y[indices]
 
@@ -106,7 +104,7 @@ def generateMiniBatches(X, y, batch_size):
 def trainModel(X, y, weights, learning_rate=0.5, lambda_reg=0.0, max_iterations=1, batch_size=1, epsilon=1e-6):
     y = np.array(y).reshape(-1, y.shape[1]) 
 
-    prev_cost = float('inf')  # Initialize the previous cost to infinity
+    prev_cost = float('inf') # Initialize the intial cost to infinity
     
     iteration = 0
     while True:
@@ -115,25 +113,21 @@ def trainModel(X, y, weights, learning_rate=0.5, lambda_reg=0.0, max_iterations=
         total_cost = 0
 
         for X_batch, y_batch in mini_batches:
-            # Perform forward propagation and compute gradients for the mini-batch
             gradients = backwardPropagation(X_batch, y_batch, weights, lambda_reg)
             cost = calculateCost(X_batch, y_batch, weights, lambda_reg)
             total_cost += cost
 
-            # Update weights using gradients
             for l in range(len(weights)):
                 weights[l] -= learning_rate * gradients[l]
 
-        # Average cost over all mini-batches
         total_cost /= len(mini_batches)
         print(f"Iteration {iteration + 1}, Cost: {total_cost:.5f}")
 
-        # Check stopping criterion
         if abs(prev_cost - total_cost) < epsilon:
-            print(f"Stopping training as the improvement in cost is less than epsilon ({epsilon}).")
+            print(f"Training Stopped - Less Improvement in Cost than {epsilon}.")
             break
 
-        prev_cost = total_cost  # Update the previous cost
+        prev_cost = total_cost # Update the previous cost
 
     return weights, gradients
 
@@ -142,7 +136,7 @@ def dataNormalization(X):
     X_max = np.max(X, axis=0)
 
     X_range = X_max - X_min
-    X_range[X_range == 0] = 1  # Prevent division by zero
+    X_range[X_range == 0] = 1 # Prevent division by zero
     
     X_normalized = 2 * (X - X_min) / X_range - 1 # Scale the data to [-1, +1]
 
@@ -156,10 +150,10 @@ def preprocessDataset(file_path):
     if 'label' in column_names:
         label_column = 'label'
     else:
-        label_column = column_names[-1]  # Default to the last column
+        label_column = column_names[-1] # Default to the last column
 
-    X = data.drop(columns=[label_column]).copy()  # All columns except the label
-    y = data[label_column].values  # Label column
+    X = data.drop(columns=[label_column]).copy() # All columns except the label
+    y = data[label_column].values # Label column
 
     categorical_columns = [col for col in X.columns if '_cat' in col]
     numerical_columns = [col for col in X.columns if '_num' in col]
@@ -169,11 +163,11 @@ def preprocessDataset(file_path):
         X_categorical_encoded = encoder.fit_transform(X[categorical_columns])
         X_categorical_encoded = pd.DataFrame(X_categorical_encoded, index=X.index)
     else:
-        X_categorical_encoded = pd.DataFrame(index=X.index)  # Empty DataFrame if no categorical columns
+        X_categorical_encoded = pd.DataFrame(index=X.index) # Empty DataFrame if no categorical columns
 
     X_numerical = X[numerical_columns]
     X_processed = pd.concat([X_numerical, X_categorical_encoded], axis=1).values
-    X_normalized, mean, std = dataNormalization(X_processed)
+    X_normalized = dataNormalization(X_processed)
 
     y = y.reshape(-1, 1)
 
@@ -196,7 +190,7 @@ def calculateEvaluationMetrics(y_true, y_pred):
 
 def predictClass(X, weights):
     a_values, _ = forwardPropagation(X, weights)
-    y_pred = a_values[-1]  # Final layer activations
+    y_pred = a_values[-1] # Final layer activations
     return y_pred
 
 def stratifiedKFoldCrossValidation(X, y, k=5):
@@ -234,6 +228,7 @@ def testCase(case):
             (np.array([0.42000]), np.array([0.23000]))   # Training instance 2
         ]
         lambda_reg = 0.0
+
     elif case == 2: # Case 2: Network Structure [2, 4, 3, 2]
         weights_list = [
             np.array([[0.42000, 0.15000, 0.40000], [0.72000, 0.10000, 0.54000], [0.01000, 0.19000, 0.42000], [0.30000, 0.35000, 0.68000]]),                           # Theta1
@@ -313,10 +308,10 @@ def testCase(case):
 
 
 if __name__ == "__main__":
-    case = None  # Set to 1 for the first case, 2 for the second case, or None to do nothing
+    case = None # Set to 1 for the first case, 2 for the second case, or None to do nothing
     mode = 2
 
-    file_path = "wdbc.csv"  # Replace with the actual path to your dataset
+    file_path = "wdbc.csv" # Replace with the actual path to your dataset
     X, y = preprocessDataset(file_path)
 
     layer_sizes = [X.shape[1], 1]
@@ -331,7 +326,7 @@ if __name__ == "__main__":
     elif mode == 1:
         splits = stratifiedKFoldCrossValidation(X, y, k=k)
 
-        fold_metrics = []  # To store metrics for each fold
+        fold_metrics = [] # To store metrics for each fold
         total_accuracy, total_precision, total_recall, total_f1_score = 0, 0, 0, 0
 
         for fold, (X_train, y_train, X_test, y_test) in enumerate(splits):
@@ -373,19 +368,19 @@ if __name__ == "__main__":
         print("\nMetrics for Each Fold:")
         for metrics in fold_metrics:
             print(f"Fold {metrics['Fold']} Metrics:")
-            print(f"Accuracy: {metrics['Accuracy']:.4f}")
-            print(f"Precision: {metrics['Precision']:.4f}")
-            print(f"Recall: {metrics['Recall']:.4f}")
-            print(f"F1 Score: {metrics['F1 Score']:.4f}")
+            print(f"Accuracy: {metrics['Accuracy']:.5f}")
+            print(f"Precision: {metrics['Precision']:.5f}")
+            print(f"Recall: {metrics['Recall']:.5f}")
+            print(f"F1 Score: {metrics['F1 Score']:.5f}")
             print(f"\n")
 
         print("\nAverage Metrics Across All Folds:")
-        print(f"Accuracy: {avg_accuracy:.4f}")
-        print(f"Precision: {avg_precision:.4f}")
-        print(f"Recall: {avg_recall:.4f}")
-        print(f"F1 Score: {avg_f1_score:.4f}")
+        print(f"Accuracy: {avg_accuracy:.5f}")
+        print(f"Precision: {avg_precision:.5f}")
+        print(f"Recall: {avg_recall:.5f}")
+        print(f"F1 Score: {avg_f1_score:.5f}")
     elif mode == 2:
-        split_ratio = 0.8  # 80% training, 20% testing
+        split_ratio = 0.8 # 80% training, 20% testing
         split_index = int(split_ratio * X.shape[0])
         X_train, X_test = X[:split_index], X[split_index:]
         y_train, y_test = y[:split_index], y[split_index:]
@@ -393,7 +388,7 @@ if __name__ == "__main__":
         training_sizes = []
         test_costs = []
 
-        for num_samples in range(5, X_train.shape[0] + 1, 5):  # Increase by 10 samples at a time
+        for num_samples in range(5, X_train.shape[0] + 1, 5): # Increase by 10 samples at a time
             print(f"\nTraining with {num_samples} samples.")
 
             X_train_subset = X_train[:num_samples]

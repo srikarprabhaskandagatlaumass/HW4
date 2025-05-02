@@ -10,7 +10,7 @@ def sigmoid_derivative(a):
     return a * (1 - a)
 
 def add_bias(X):
-    if X.ndim == 1:
+    if X.ndim == 1: 
         return np.concatenate([[1], X])
     return np.column_stack([np.ones(X.shape[0]), X])
 
@@ -197,12 +197,6 @@ def normalize_data(X):
     return X_normalized, X_min, X_max
 
 def load_and_preprocess_dataset(file_path):
-    """
-    Load and preprocess the dataset from a CSV file.
-    Assumes the first row contains column names.
-    If a column named 'label' exists, it is used as the label column.
-    Otherwise, the last column is used as the label.
-    """
     # Load the dataset using pandas
     data = pd.read_csv(file_path)
 
@@ -273,18 +267,11 @@ def calculate_metrics(y_true, y_pred):
     return accuracy, precision, recall, f1_score
 
 def predict(X, weights):
-    """
-    Make predictions using the trained neural network.
-    """
     a_values, _ = forward_propagation(X, weights)
     y_pred = a_values[-1]  # Final layer activations
     return y_pred
 
 def stratified_k_fold_split(X, y, k=5):
-    """
-    Perform stratified k-fold splitting of the dataset.
-    Ensures that each fold has a similar class distribution as the original dataset.
-    """
     # Get the unique classes and their indices
     classes, y_indices = np.unique(y, return_inverse=True)
     folds = [[] for _ in range(k)]
@@ -307,22 +294,6 @@ def stratified_k_fold_split(X, y, k=5):
     return splits
 
 def process_network_case(case):
-    """
-    Process the network for the given case and print the required outputs.
-
-    Parameters:
-        case (int): The case to process (1 for the first case, 2 for the second case).
-
-    Prints:
-        - Activation of each neuron
-        - Final predicted output of the network
-        - Expected output
-        - Cost (J) associated with each instance
-        - Delta values of each neuron
-        - Gradients of all weights after processing each instance
-        - Final (regularized) gradients after backpropagation
-        - Final (regularized) cost, J, based on the complete training set
-    """
     if case == 1:
         # Case 1: Network Structure [1, 2, 1]
         network_structure = [1, 2, 1]
@@ -401,168 +372,15 @@ def process_network_case(case):
     final_cost = compute_cost(X_train, y_train, weights_list, lambda_reg=0.25)
     print(f"\nFinal (Regularized) Cost, J, Based on the Complete Training Set: {final_cost:.4f}")
 
-# if __name__ == "__main__":
-#     # Load and preprocess the dataset
-#     file_path = "wdbc.csv"  # Replace with the actual path to your dataset
-#     X, y = load_and_preprocess_dataset(file_path)
-
-#     input_layer_size = X.shape[1]
-
-#     # Define the structure of the network
-#     layer_sizes = [input_layer_size, 16, 8, 1]
-#     learning_rate = 0.5
-#     max_iterations = 1000
-#     lambda_reg = 0.25
-#     batch_size = 32  # Mini-batch size
-#     epsilon = 1e-6  # Stopping criterion threshold
-#     k = 5  # Number of folds for cross-validation
-
-#     # Perform stratified k-fold cross-validation
-#     splits = stratified_k_fold_split(X, y, k=k)
-
-#     # Initialize metrics
-#     fold_metrics = []  # To store metrics for each fold
-#     total_accuracy, total_precision, total_recall, total_f1_score = 0, 0, 0, 0
-
-#     for fold, (train_indices, test_indices) in enumerate(splits):
-#         print(f"\nProcessing Fold {fold + 1}/{k}")
-
-#         # Split the data into training and testing sets
-#         X_train, y_train = X[train_indices], y[train_indices]
-#         X_test, y_test = X[test_indices], y[test_indices]
-
-#         # Initialize weights
-#         weights = initialize_weights(layer_sizes)
-
-#         # Train the network
-#         trained_weights, gradients = train_network(
-#             X_train, y_train,
-#             weights=weights,
-#             learning_rate=learning_rate,
-#             lambda_reg=lambda_reg,
-#             max_iterations=max_iterations,
-#             batch_size=batch_size,
-#             epsilon=epsilon
-#         )
-
-#         # Make predictions on the test set
-#         y_pred = predict(X_test, trained_weights)
-
-#         # Calculate metrics for this fold
-#         accuracy, precision, recall, f1_score = calculate_metrics(y_test, y_pred)
-
-#         # Store metrics for this fold
-#         fold_metrics.append({
-#             "Fold": fold + 1,
-#             "Accuracy": accuracy,
-#             "Precision": precision,
-#             "Recall": recall,
-#             "F1 Score": f1_score
-#         })
-
-#         # Accumulate metrics
-#         total_accuracy += accuracy
-#         total_precision += precision
-#         total_recall += recall
-#         total_f1_score += f1_score
-
-#     # Compute average metrics across all folds
-#     avg_accuracy = total_accuracy / k
-#     avg_precision = total_precision / k
-#     avg_recall = total_recall / k
-#     avg_f1_score = total_f1_score / k
-
-#     # Print metrics for each fold
-#     print("\nMetrics for Each Fold:")
-#     for metrics in fold_metrics:
-#         print(f"Fold {metrics['Fold']} Metrics:")
-#         print(f"Accuracy: {metrics['Accuracy']:.4f}")
-#         print(f"Precision: {metrics['Precision']:.4f}")
-#         print(f"Recall: {metrics['Recall']:.4f}")
-#         print(f"F1 Score: {metrics['F1 Score']:.4f}")
-#         print(f"\n")
-
-#     # Print average metrics
-#     print("\nAverage Metrics Across All Folds:")
-#     print(f"Accuracy: {avg_accuracy:.4f}")
-#     print(f"Precision: {avg_precision:.4f}")
-#     print(f"Recall: {avg_recall:.4f}")
-#     print(f"F1 Score: {avg_f1_score:.4f}")
-
-
-
-# if __name__ == "__main__":
-#     # Load and preprocess the dataset
-#     file_path = "wdbc.csv"  # Replace with the actual path to your dataset
-#     X, y = load_and_preprocess_dataset(file_path)
-
-#     input_layer_size = X.shape[1]
-
-#     # Define the structure of the network
-#     layer_sizes = [input_layer_size, 16, 8, 1]
-#     learning_rate = 0.5  # Step size (α)
-#     max_iterations = 50
-#     lambda_reg = 0.25
-#     batch_size = 32  # Mini-batch size
-#     epsilon = 1e-6  # Stopping criterion threshold
-
-#     # Split the dataset into training and test sets
-#     split_ratio = 0.8  # 80% training, 20% testing
-#     split_index = int(split_ratio * X.shape[0])
-#     X_train, X_test = X[:split_index], X[split_index:]
-#     y_train, y_test = y[:split_index], y[split_index:]
-
-#     # Initialize variables for the learning curve
-#     training_sizes = []
-#     test_costs = []
-
-#     # Incrementally increase the number of training samples
-#     for num_samples in range(10, X_train.shape[0] + 1, 10):  # Increase by 10 samples at a time
-#         print(f"\nTraining with {num_samples} samples...")
-
-#         # Use the first `num_samples` training examples
-#         X_train_subset = X_train[:num_samples]
-#         y_train_subset = y_train[:num_samples]
-
-#         # Initialize weights
-#         weights = initialize_weights(layer_sizes)
-
-#         # Train the network
-#         trained_weights, gradients = train_network(
-#             X_train_subset, y_train_subset,
-#             weights=weights,
-#             learning_rate=learning_rate,
-#             lambda_reg=lambda_reg,
-#             max_iterations=max_iterations,
-#             batch_size=batch_size,
-#             epsilon=epsilon
-#         )
-
-#         # Compute the cost on the test set
-#         test_cost = compute_cost(X_test, y_test, trained_weights, lambda_reg)
-#         print(f"Test Cost (J) with {num_samples} training samples: {test_cost:.4f}")
-
-#         # Store the results
-#         training_sizes.append(num_samples)
-#         test_costs.append(test_cost)
-
-#     # Plot the learning curve
-#     plt.figure(figsize=(10, 6))
-#     plt.plot(training_sizes, test_costs, marker='o', label="Test Cost (J)")
-#     plt.title("Learning Curve")
-#     plt.xlabel("Number of Training Samples")
-#     plt.ylabel("Cost Function (J)")
-#     plt.grid(True)
-#     plt.legend()
-#     plt.show()
 
 if __name__ == "__main__":
     # Variable to call the function for specific cases
     case = None  # Set to 1 for the first case, 2 for the second case, or None to do nothing
+    mode = 2
 
     if case is not None:
         process_network_case(case)
-    else:
+    elif mode == 1:
         # Load and preprocess the dataset
         file_path = "wdbc.csv"  # Replace with the actual path to your dataset
         X, y = load_and_preprocess_dataset(file_path)
@@ -571,8 +389,95 @@ if __name__ == "__main__":
 
         # Define the structure of the network
         layer_sizes = [input_layer_size, 16, 8, 1]
+        learning_rate = 0.5
+        max_iterations = 1000
+        lambda_reg = 0.25
+        batch_size = 32  # Mini-batch size
+        epsilon = 1e-6  # Stopping criterion threshold
+        k = 5  # Number of folds for cross-validation
+
+        # Perform stratified k-fold cross-validation
+        splits = stratified_k_fold_split(X, y, k=k)
+
+        # Initialize metrics
+        fold_metrics = []  # To store metrics for each fold
+        total_accuracy, total_precision, total_recall, total_f1_score = 0, 0, 0, 0
+
+        for fold, (train_indices, test_indices) in enumerate(splits):
+            print(f"\nProcessing Fold {fold + 1}/{k}")
+
+            # Split the data into training and testing sets
+            X_train, y_train = X[train_indices], y[train_indices]
+            X_test, y_test = X[test_indices], y[test_indices]
+
+            # Initialize weights
+            weights = initialize_weights(layer_sizes)
+
+            # Train the network
+            trained_weights, gradients = train_network(
+                X_train, y_train,
+                weights=weights,
+                learning_rate=learning_rate,
+                lambda_reg=lambda_reg,
+                max_iterations=max_iterations,
+                batch_size=batch_size,
+                epsilon=epsilon
+            )
+
+            # Make predictions on the test set
+            y_pred = predict(X_test, trained_weights)
+
+            # Calculate metrics for this fold
+            accuracy, precision, recall, f1_score = calculate_metrics(y_test, y_pred)
+
+            # Store metrics for this fold
+            fold_metrics.append({
+                "Fold": fold + 1,
+                "Accuracy": accuracy,
+                "Precision": precision,
+                "Recall": recall,
+                "F1 Score": f1_score
+            })
+
+            # Accumulate metrics
+            total_accuracy += accuracy
+            total_precision += precision
+            total_recall += recall
+            total_f1_score += f1_score
+
+        # Compute average metrics across all folds
+        avg_accuracy = total_accuracy / k
+        avg_precision = total_precision / k
+        avg_recall = total_recall / k
+        avg_f1_score = total_f1_score / k
+
+        # Print metrics for each fold
+        print("\nMetrics for Each Fold:")
+        for metrics in fold_metrics:
+            print(f"Fold {metrics['Fold']} Metrics:")
+            print(f"Accuracy: {metrics['Accuracy']:.4f}")
+            print(f"Precision: {metrics['Precision']:.4f}")
+            print(f"Recall: {metrics['Recall']:.4f}")
+            print(f"F1 Score: {metrics['F1 Score']:.4f}")
+            print(f"\n")
+
+        # Print average metrics
+        print("\nAverage Metrics Across All Folds:")
+        print(f"Accuracy: {avg_accuracy:.4f}")
+        print(f"Precision: {avg_precision:.4f}")
+        print(f"Recall: {avg_recall:.4f}")
+        print(f"F1 Score: {avg_f1_score:.4f}")
+    elif mode == 2:
+        # Load and preprocess the dataset
+        file_path = "titanic.csv"  # Replace with the actual path to your dataset
+        X, y = load_and_preprocess_dataset(file_path)
+
+        input_layer_size = X.shape[1]
+
+        # Define the structure of the network
+        layer_sizes = [input_layer_size, 16, 8, 1]
         learning_rate = 0.5  # Step size (α)
-        max_iterations = 50
+        max_iterations = 100
         lambda_reg = 0.25
         batch_size = 32  # Mini-batch size
         epsilon = 1e-6  # Stopping criterion threshold
@@ -588,7 +493,7 @@ if __name__ == "__main__":
         test_costs = []
 
         # Incrementally increase the number of training samples
-        for num_samples in range(10, X_train.shape[0] + 1, 10):  # Increase by 10 samples at a time
+        for num_samples in range(5, X_train.shape[0] + 1, 5):  # Increase by 5 samples at a time
             print(f"\nTraining with {num_samples} samples...")
 
             # Use the first `num_samples` training examples

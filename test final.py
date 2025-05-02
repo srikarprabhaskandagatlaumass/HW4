@@ -93,10 +93,10 @@ def generateMiniBatches(X, y, batch_size):
 def trainModel(X, y, weights, learning_rate=0.5, lambda_reg=0.0, max_iterations=1, batch_size=1, epsilon=1e-6):
     y = np.array(y).reshape(-1, y.shape[1]) 
 
-    prev_cost = float('inf') # Initialize the intial cost to infinity
+    # prev_cost = float('inf') # Initialize the intial cost to infinity
     
     for iteration in range(max_iterations):
-        mini_batches = generateMiniBatches(X, y, batch_size)  # Create mini-batches
+        mini_batches = generateMiniBatches(X, y, batch_size) # Create mini-batches
         total_cost = 0
 
         for X_batch, y_batch in mini_batches:
@@ -114,7 +114,7 @@ def trainModel(X, y, weights, learning_rate=0.5, lambda_reg=0.0, max_iterations=
         #     print(f"Training Stopped - Less Improvement in Cost than {epsilon}.")
         #     break
 
-        prev_cost = total_cost # Update the previous cost
+        # prev_cost = total_cost # Update the previous cost
 
     return weights, gradients
 
@@ -282,15 +282,15 @@ if __name__ == "__main__":
     case = None # Set to 1 for the first case, 2 for the second case, or None to do nothing
     mode = 2
 
-    file_path = "wdbc.csv" # Replace with the actual path to your dataset
+    file_path = "loan.csv" # Replace with the actual path to your dataset
     X, y = preprocessDataset(file_path)
 
     layer_sizes = [X.shape[1], 16, 8, 1]
-    learning_rate=0.1
+    learning_rate=0.001
     lambda_reg=0.001
     max_iterations=50
     batch_size=32
-    epsilon=0.00001
+    # epsilon=0.00001
     k=5
 
     if case is not None:
@@ -362,13 +362,15 @@ if __name__ == "__main__":
         training_sizes = []
         test_costs = []
 
+        weights = generateInitialWeights(layer_sizes)
+
         for num_samples in range(10, X_train.shape[0] + 1, 10): # Increase by 10 samples at a time
             print(f"\nTraining with {num_samples} samples.")
 
             X_train_subset = X_train[:num_samples]
             y_train_subset = y_train[:num_samples]
 
-            weights = generateInitialWeights(layer_sizes)
+            # weights = generateInitialWeights(layer_sizes)
 
             trained_weights, gradients = trainModel(
                 X_train_subset, y_train_subset,
@@ -390,9 +392,9 @@ if __name__ == "__main__":
 
         plt.figure(figsize=(10, 6))
         plt.plot(training_sizes, test_costs, label="Cost (J) on Test Set", linewidth=2)
-        plt.title(f"Learning Curve for Neural Network Architecture: {layer_sizes} - {dataset_title} Dataset")
+        plt.title(f"Learning Curve for Neural Network Architecture: {layer_sizes} - {dataset_title} Dataset - Lambda: {lambda_reg} - Alpha: {learning_rate}")
         plt.xlabel("Number of Training Samples")
-        plt.ylabel("Cost Function (J) on Test Set")
+        plt.ylabel("Cost Function (J)")
         # plt.grid(True)
         plt.legend()
         plt.show()

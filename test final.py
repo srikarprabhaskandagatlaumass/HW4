@@ -101,7 +101,7 @@ def generateMiniBatches(X, y, batch_size):
 
     return mini_batches
 
-def trainModel(X, y, weights, learning_rate=0.5, lambda_reg=0.0, max_iterations=1, batch_size=1, epsilon=1e-6):
+def trainModel(X, y, weights, learning_rate=0.5, lambda_reg=0.0, batch_size=1, epsilon=1e-6):
     y = np.array(y).reshape(-1, y.shape[1]) 
 
     prev_cost = float('inf') # Initialize the intial cost to infinity
@@ -121,7 +121,7 @@ def trainModel(X, y, weights, learning_rate=0.5, lambda_reg=0.0, max_iterations=
                 weights[l] -= learning_rate * gradients[l]
 
         total_cost /= len(mini_batches)
-        print(f"Iteration {iteration + 1}, Cost: {total_cost:.5f}")
+        print(f"Iteration: {iteration + 1}, Cost: {total_cost:.5f}")
 
         if abs(prev_cost - total_cost) < epsilon:
             print(f"Training Stopped - Less Improvement in Cost than {epsilon}.")
@@ -293,16 +293,16 @@ def testCase(case):
 
 if __name__ == "__main__":
     case = None # Set to 1 for the first case, 2 for the second case, or None to do nothing
-    mode = 1
+    mode = 2
 
     file_path = "raisin.csv" # Replace with the actual path to your dataset
     X, y = preprocessDataset(file_path)
 
     layer_sizes = [X.shape[1], 16, 8, 1]
-    learning_rate = 0.5
-    lambda_reg = 0.25
+    learning_rate = 0.1
+    lambda_reg = 0.01
     batch_size = 32 
-    epsilon = 0.0001 
+    epsilon = 0.00001
     k = 5 
 
     if case is not None:
@@ -373,7 +373,7 @@ if __name__ == "__main__":
         training_sizes = []
         test_costs = []
 
-        for num_samples in range(5, X_train.shape[0] + 1, 5): # Increase by 10 samples at a time
+        for num_samples in range(10, X_train.shape[0] + 1, 10): # Increase by 10 samples at a time
             print(f"\nTraining with {num_samples} samples.")
 
             X_train_subset = X_train[:num_samples]
@@ -395,12 +395,14 @@ if __name__ == "__main__":
 
             training_sizes.append(num_samples)
             test_costs.append(test_cost)
+        
+        dataset_title = (file_path.split("/")[-1].split(".")[0]).capitalize() # Extract dataset title from the file path
 
         plt.figure(figsize=(10, 6))
-        plt.plot(training_sizes, test_costs, marker='o', label="Test Cost (J)")
-        plt.title("Learning Curve")
+        plt.plot(training_sizes, test_costs, label="Cost (J) on Test Set", linewidth=2)
+        plt.title(f"Learning Curve for Neural Network Architecture: {layer_sizes} - {dataset_title} Dataset")
         plt.xlabel("Number of Training Samples")
-        plt.ylabel("Cost Function (J)")
-        plt.grid(True)
+        plt.ylabel("Cost Function (J) on Test Set")
+        # plt.grid(True)
         plt.legend()
         plt.show()

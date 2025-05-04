@@ -90,7 +90,7 @@ def generateMiniBatches(X, y, batch_size):
 
     return mini_batches
 
-def trainModel(X, y, weights, learning_rate=0.5, lambda_reg=0.0, max_iterations=1, batch_size=1, epsilon=1e-6):
+def trainModel(X, y, weights, alpha_learning_rate=0.5, lambda_reg=0.0, max_iterations=1, batch_size=1, epsilon=1e-6):
     y = np.array(y).reshape(-1, y.shape[1]) 
 
     # prev_cost = float('inf') # Initialize the intial cost to infinity
@@ -105,7 +105,7 @@ def trainModel(X, y, weights, learning_rate=0.5, lambda_reg=0.0, max_iterations=
             total_cost += cost
 
             for l in range(len(weights)):
-                weights[l] -= learning_rate * gradients[l]
+                weights[l] -= alpha_learning_rate * gradients[l]
 
         total_cost /= len(mini_batches)
         print(f"Iteration: {iteration + 1}, Cost: {total_cost:.5f}")
@@ -282,13 +282,17 @@ if __name__ == "__main__":
     case = None # Set to 1 for the first case, 2 for the second case, or None to do nothing
     mode = 2
 
-    file_path = "loan.csv" # Replace with the actual path to your dataset
+    file_path = "wdbc.csv" # Change this for using different datasets
     X, y = preprocessDataset(file_path)
 
-    layer_sizes = [X.shape[1], 16, 8, 1]
-    learning_rate=0.001
-    lambda_reg=0.001
-    max_iterations=50
+    indices = np.random.permutation(X.shape[0]) 
+    X = X[indices] 
+    y = y[indices] 
+
+    layer_sizes = [X.shape[1], 16, 1]
+    alpha_learning_rate=0.1
+    lambda_reg=0.01
+    max_iterations=100
     batch_size=32
     # epsilon=0.00001
     k=5
@@ -301,6 +305,7 @@ if __name__ == "__main__":
         fold_metrics = [] # To store metrics for each fold
         total_accuracy, total_precision, total_recall, total_f1_score = 0, 0, 0, 0
 
+
         for fold, (X_train, y_train, X_test, y_test) in enumerate(splits):
             print(f"\nProcessing Fold {fold + 1}/{k}")
 
@@ -309,7 +314,7 @@ if __name__ == "__main__":
             trained_weights, gradients = trainModel(
                 X_train, y_train,
                 weights=weights,
-                learning_rate=learning_rate,
+                alpha_learning_rate=alpha_learning_rate,
                 lambda_reg=lambda_reg,
                 max_iterations=max_iterations,
                 batch_size=batch_size,
@@ -375,7 +380,7 @@ if __name__ == "__main__":
             trained_weights, gradients = trainModel(
                 X_train_subset, y_train_subset,
                 weights=weights,
-                learning_rate=learning_rate,
+                alpha_learning_rate=alpha_learning_rate,
                 lambda_reg=lambda_reg,
                 max_iterations=max_iterations,
                 batch_size=batch_size,
@@ -391,8 +396,8 @@ if __name__ == "__main__":
         dataset_title = (file_path.split("/")[-1].split(".")[0]).capitalize() # Extract dataset title from the file path
 
         plt.figure(figsize=(10, 6))
-        plt.plot(training_sizes, test_costs, label="Cost (J) on Test Set", linewidth=2)
-        plt.title(f"Learning Curve for Neural Network Architecture: {layer_sizes} - {dataset_title} Dataset - Lambda: {lambda_reg} - Alpha: {learning_rate}")
+        plt.plot(training_sizes, test_costs, label="Cost (J)", linewidth=2)
+        plt.title(f"Learning Curve - NN: {layer_sizes} - {dataset_title} Dataset - Lambda: {lambda_reg} - Alpha: {alpha_learning_rate} - Batch Size: {batch_size}")
         plt.xlabel("Number of Training Samples")
         plt.ylabel("Cost Function (J)")
         # plt.grid(True)
